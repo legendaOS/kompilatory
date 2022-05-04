@@ -52,8 +52,6 @@ def parseList(s):
     return res
 
 
-testString = '(a|b)|(a|b|c)'
+k = parseList('[ab[abc]]')
 
-
-
-print(parseList(parseString(testString)))
+print(k)

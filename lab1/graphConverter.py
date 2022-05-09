@@ -4,10 +4,17 @@ def getNoda(note):
 def getSymbol(note):
     return list(note.keys())[0]
 
+def getAllNodes(connection):
+    buf = []
+    for i in connection:
+        buf.append(getNoda(i))
+    return buf
+
 class Graph():
     def __init__(self, startPoint, endPoint) -> None:
         self.Start = startPoint
         self.End = endPoint
+        self.Finish = []
 
     def getListOfNodes(self):
         numeratedNodes = [self.Start]
@@ -36,23 +43,25 @@ class Graph():
 
 
     def createMap(self):
-        Map = {self.Start: {'Connections': self.Start.Connections, 'BackConnections': self.Start.BackConnections}}
+        listAllNodes = [self.Start]
+        Map = {}
 
-        # index = 0
-        # while True:
-        #     #loop for append in Map
+        index = 0
 
-        #     Map[list(Map.keys())[index]]                        #текущий элемент в Map
+        while True:
+            appended = 0
 
-        #     Map[list(Map.keys())[index]]['Connections']         # Connections in current element of Map
-        #     Map[list(Map.keys())[index]]['BackConnections']     # Same
+            Map[listAllNodes[index]] = {'Connections': listAllNodes[index].getConnections(), 'BackConnections': listAllNodes[index].getBackConnections()}
+            
+            for i in getAllNodes(Map[listAllNodes[index]]['Connections']):
+                if not i in listAllNodes:
+                    listAllNodes.append(i)
 
-        #     ioc = 0                                             #index of connection in current element of connections in Map 
+            
 
-        #     while ioc < len(Map[list(Map.keys())[index]]['Connections'][ioc]):
+            index += 1
 
-        #         Map[list(Map.keys())[index]]['Connections'][ioc]
-                
+            if index == len(listAllNodes): break
 
         return Map
 
@@ -90,6 +99,11 @@ class Node():
     def appendBackConnections(self, letter, pointToConnect):
         self.BackConnections.append({letter: pointToConnect})
 
+    def getConnections(self):
+        return self.Connections
+
+    def getBackConnections(self):
+        return self.BackConnections
 
 
 
@@ -205,8 +219,10 @@ def createGraphFromList(convertedList):
     return listTograph[0]
 
 
-from itertools import count
-from prettytable import PrettyTable  # Импортируем установленный модуль.
+
+
+from matplotlib.pyplot import flag
+from prettytable import PrettyTable
 
 def prettyPrint(tableWithAnnotation):
     th = ['N']
@@ -272,43 +288,256 @@ def deleteLongEps(g: Graph):
                 index += 1
 
     
+    graphMap = g.createMap()
+
+    #добавить новые епс соединения из списка новых соединений
+
+    for key in reconnections.keys():
+        for new_connect in reconnections[key]:
+            if not new_connect in getAllNodes(graphMap[key]['Connections']):
+                graphMap[key]['Connections'].append({'eps': new_connect})
 
 
+    #delete all connections and backconnections to candidates to remove
+    
+    for node in graphMap.keys():
+        index_in_node = 0
+        while True:
+            if len(graphMap[node]['Connections']) > 0:
+                if getNoda(graphMap[node]['Connections'][index_in_node]) in candidatesToRemove:
+                    graphMap[node]['Connections'].pop(index_in_node)
+                else:
+                    index_in_node += 1
+            if index_in_node >= len(graphMap[node]['Connections']): break
 
-    return candidatesToRemove   
+        index_in_node = 0
+        while True:
+            if len(graphMap[node]['BackConnections']) > 0:
+                if getNoda(graphMap[node]['BackConnections'][index_in_node]) in candidatesToRemove:
+                    graphMap[node]['BackConnections'].pop(index_in_node)
+                else:
+                    index_in_node += 1
+            if index_in_node >= len(graphMap[node]['BackConnections']): break
+
+    
+    #Создать конечную точку и добавить новые конечные точки
+
+    candidatesToFinish = [g.End]
+    while True:
+        appended = 0
+        for node in graphMap.keys():
+            for connect in graphMap[node]['Connections']:
+                if getNoda(connect) in candidatesToFinish and getSymbol(connect) == 'eps' and not node in candidatesToFinish:
+                    candidatesToFinish.append(node)
+                    appended += 1
+        if appended == 0:
+            break
+
+    for i in candidatesToFinish:
+        g.Finish.append(i)
+
+    #рекомпановка соединений через епсилоны
+
+    
       
 
 
+def recomposition(g: Graph):
+    graphMap = g.createMap()
+
+    recomposition = {}
+
+    for noda in graphMap.keys():
+        epsilons = [] #list on nodes
+        for connection in noda.getConnections():
+            if getSymbol(connection) == 'eps':
+                epsilons.append(getNoda(connection))
+        next = [] #list of list of connections
+        for eps_noda in epsilons:
+            buffer_connections = []
+            for connection in eps_noda.getConnections():
+                if getSymbol(connection) != 'eps':
+                    buffer_connections.append(connection)
+            next.append(buffer_connections)
+        recomposition[noda] = {'epsilons': epsilons, 'next':next}
+
+    
+
+    for noda in recomposition:
+        #уалить эпсилон переходы из начала
+        for epsilon_noda_index in range(len(recomposition[noda]['epsilons'])):
+            epsilon_noda = recomposition[noda]['epsilons'][epsilon_noda_index]
+            if len(recomposition[noda]['next'][epsilon_noda_index]):
+                c_i_b = graphMap[noda]['Connections'] 
+                if {'eps': epsilon_noda} in c_i_b:
+                    c_i_b.pop(c_i_b.index({'eps': epsilon_noda}))
+        
+        #удалить буквенные переходы после епсилон переходад
+        for i_it_c in range(len(recomposition[noda]['next'])):
+            list_con = recomposition[noda]['next'][i_it_c]
+            if list_con != []:
+                for iter_con in list_con:
+                    del_name = recomposition[noda]['epsilons'][i_it_c]
+                    gr_con = graphMap[del_name]['Connections']
+                    buf = {getSymbol(iter_con): getNoda(iter_con)}
+                    if buf in gr_con:
+                        gr_con.pop(gr_con.index(buf))
+
+        # соединение нод между которыми разорваны связи
+        for i_it_c in range(len(recomposition[noda]['next'])):
+            list_con = recomposition[noda]['next'][i_it_c]
+            if list_con != []:
+                for iter_con in list_con:
+                    gr_con = graphMap[noda]['Connections']
+                    buf = {getSymbol(iter_con): getNoda(iter_con)}
+                    if not buf in gr_con:
+                        gr_con.append(buf)
+
+    # return graphMap
+    return recomposition
+
+
+def deleteEpsConnections(g: Graph):
+    graphMap = g.createMap()
+
+    for noda in graphMap:
+        index = 0
+        if len(graphMap[noda]['Connections']) != 0:
+            while True:
+                if getSymbol(graphMap[noda]['Connections'][index]) == 'eps':
+                    graphMap[noda]['Connections'].pop(index)
+                else:
+                    index += 1
+                if index == len(graphMap[noda]['Connections']): break
+    
+    nodes = g.getListOfNodes()['numeratedNodes']
+
+    index = 0
+    if g.Finish != []:
+        while True:
+            if not g.Finish[index] in nodes:
+                g.Finish.pop(index)
+            else:
+                index += 1
+            if index == len(g.Finish): break 
+
+
+def NKAEps(parsedPoland: list):
+    return createGraphFromList(parsedPoland)
+
+def NKA(g:Graph):
+    deleteLongEps(g)
+    recomposition(g)
+    deleteEpsConnections(g)
+
+def getConnectionsInMap(Map, node):
+    return Map[node]['Connections']
+
+def convTIntL(a):
+    k = a[1:-1].split(', ')
+    return list(int(i) for i in k)
+
+def DKA(g:Graph):
+    nodes = g.getListOfNodes()['numeratedNodes']
+    letters = g.getListOfNodes()['connectionsSymbols']
+
+    numbers = {}
+    newConnections = {}
+
+        
+    for i in range(len(nodes)): numbers[nodes[i]] = i
+
+    Qstack = [[numbers[g.Start]]]
+
+    index = 0
+    while True:
+        iterNodes = []
+        for i in Qstack[index]: iterNodes.append(nodes[i])
+        
+
+        iterConnections = []
+        for noda in iterNodes:
+            for connection in noda.getConnections():
+                iterConnections.append(connection)
+
+        bufferConnections = {}
+        for i in letters:
+            bufferConnections[i] = []
+        for i in iterConnections:
+            if not numbers[getNoda(i)] in bufferConnections[getSymbol(i)]:
+                bufferConnections[getSymbol(i)].append(numbers[getNoda(i)])
+
+        for i in bufferConnections.keys():
+            bufferConnections[i].sort()
+
+        
+
+
+        newConnections[str(Qstack[index])] = bufferConnections
+        for i in bufferConnections.values():
+            if not i in Qstack: Qstack.append(i)
+
+
+        
+        
+        index += 1
+        if index == len(Qstack): break
+                  
+
+    fin = []
+    for i in g.Finish:
+        fin.append(numbers[i])
+
+    #create DKA
+
+    for i in newConnections.keys():
+        for k in newConnections[i].keys():
+            newConnections[i][k] = str(newConnections[i][k])
+
+    sp = None
+    resGraph = None
+    newPoints = {}
+
+    for nodeName in newConnections.keys():
+        if 0 in convTIntL(nodeName):
+            sp = Node()
+            resGraph = Graph(sp, sp)
+            newPoints[nodeName] = sp
+        else:
+            newPoints[nodeName] = Node()
+        
+    for nodeName in newPoints.keys():
+        for i in fin:
+            if i in convTIntL(nodeName):
+                resGraph.Finish.append(newPoints[nodeName])
+
+
+    for nodeName in newConnections.keys():
+        for letterConnection in newConnections[nodeName].keys():
+            newPoints[nodeName].appendConnection(letterConnection, newPoints[newConnections[nodeName][letterConnection]])
+    
+    return resGraph
 
 
 
 
 
+a = "*.*|aba"
 
-a = list('*|ab')
+g = NKAEps(a)
 
-print(1)
+prettyPrint(g.createTable())
 
-b = createGraphFromList(a)
+NKA(g)
 
+LOF = g.getListOfNodes()
 
+prettyPrint(g.createTable())
 
+DKA = DKA(g)
 
-print(2)
+prettyPrint(DKA.createTable())
 
-c = b.createTable()
-
-to_remove = deleteLongEps(b)
-
-map = b.createMap()
-
-poppo = map[list(map.keys())[0]]['Connections'][1][list(map[list(map.keys())[0]]['Connections'][0])[0]]
-map[list(map.keys())[0]]['Connections']
-
-l = b.getListOfNodes()
-
-
+rerere = DKA.getListOfNodes()
 
 print('all')
-
-

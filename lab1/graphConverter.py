@@ -220,8 +220,6 @@ def createGraphFromList(convertedList):
 
 
 
-
-from matplotlib.pyplot import flag
 from prettytable import PrettyTable
 
 def prettyPrint(tableWithAnnotation):
@@ -498,6 +496,34 @@ def DKA(g:Graph):
     resGraph = None
     newPoints = {}
 
+
+
+    deleted_keys = []
+
+    for key in newConnections.keys():
+        if key == '[]':
+            deleted_keys.append(key)
+
+    for key in deleted_keys:
+        newConnections.pop(key)
+
+
+
+    deleted_keys = {}
+
+    for key in newConnections.keys():
+        deleted_keys[key] = []
+        for key_in in newConnections[key]:
+            if newConnections[key][key_in] == '[]':
+                deleted_keys[key].append(key_in)
+
+
+
+    for key in deleted_keys.keys():
+        for key_in in deleted_keys[key]:
+            newConnections[key].pop(key_in)
+
+
     for nodeName in newConnections.keys():
         if 0 in convTIntL(nodeName):
             sp = Node()
@@ -519,10 +545,123 @@ def DKA(g:Graph):
     return resGraph
 
 
+def sumulation(g: Graph, reg: String) -> Boolean:
+    currentNode = g.Start
+    for letter in reg:
+        connections_in = currentNode.getConnections()
+        flagHas = False
+        index = None
+        for index_connect in range(len(connections_in)):
+            if getSymbol(connections_in[index_connect]) == letter:
+                flagHas = True
+                index = index_connect
+                break
+        if flagHas:
+            currentNode = getNoda(connections_in[index])
+        else:
+            return False
+
+    if currentNode in g.Finish:
+        return True
+    else:
+        return False
 
 
+def convertToPoland(s:str) -> str:
+    #расставить точки
+    operators = ['*', '|']
+    alloperators = ['*', '(', ')', '|']
+    allop = ['*', ')', '|']
+    buf = ''
+    for i in range(len(s) - 1):
+        if s[i] == ')':
+            if not s[i+1] in allop:
+                buf += s[i]
+                buf += '.'
+            else:
+                buf += s[i]
+        elif not s[i] in alloperators:
+            if not s[i+1] in allop:
+                buf += s[i]
+                buf += '.'
+            else:
+                buf += s[i]
+        elif s[i] == '*':
+            buf += s[i]
+            buf += '.'
+        else:
+            buf += s[i]
+        
+    buf += s[-1]
 
-a = "*.*|aba"
+    nbuf = ''
+    for i in buf[::-1]:
+        if i == ')':
+            nbuf+= '('
+        elif i == '(':
+            nbuf += ')'
+        else:
+            nbuf += i
+    
+    #convert to polka
+
+    ops = ['(', ')', '.', '|', '*']
+    
+    prioritet = {'.': 1, '|':2, '*': 3, '(': 0}
+    rets = ''
+    Qstack = []
+
+    for let in nbuf:
+        print('------------')
+        print(let, nbuf)
+        print('S:', Qstack)
+        print('R:', rets)
+        print('------------')
+        if not let in ops:
+            rets += let
+        else:
+            if let == '(':
+                Qstack.append(let)
+            elif let == ')':
+                while True:
+                    ntr = Qstack.pop()
+                    if ntr == '(': 
+                        break
+                    else:
+                        rets += ntr
+            else:
+                if len(Qstack) == 0:
+                    Qstack.append(let)
+                else:
+                    if prioritet[let] > prioritet[Qstack[-1]]:
+                        Qstack.append(let)
+                    else:
+                        while True:
+                            top = Qstack[len(Qstack)-1]
+                            priortop = prioritet.get(top)
+                            priorlet = prioritet.get(let)
+                            if priortop <= priorlet and len(Qstack) != 0:
+                                ntr = Qstack.pop()
+                                rets += ntr
+                            else:
+                                break
+                        Qstack.append(let)
+
+
+    while True:
+        if len(Qstack) != 0:
+            rets += Qstack.pop()
+        else:
+            break
+
+    
+
+    return rets[::-1]
+
+
+s = convertToPoland('(a|b)*c|d')    
+
+a = ".|ab*|cd"
 
 g = NKAEps(a)
 
@@ -539,5 +678,7 @@ DKA = DKA(g)
 prettyPrint(DKA.createTable())
 
 rerere = DKA.getListOfNodes()
+
+flag = sumulation(DKA, 'accccccccccddddcdcdccdcdc')
 
 print('all')

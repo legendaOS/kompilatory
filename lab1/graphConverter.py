@@ -218,9 +218,8 @@ def createGraphFromList(convertedList):
 
     return listTograph[0]
 
-
-
 from prettytable import PrettyTable
+
 
 def prettyPrint(tableWithAnnotation):
     th = ['N']
@@ -545,7 +544,7 @@ def DKA(g:Graph):
     return resGraph
 
 
-def sumulation(g: Graph, reg: String) -> Boolean:
+def sumulation(g: Graph, reg: str) -> bool:
     currentNode = g.Start
     for letter in reg:
         connections_in = currentNode.getConnections()
@@ -612,11 +611,7 @@ def convertToPoland(s:str) -> str:
     Qstack = []
 
     for let in nbuf:
-        print('------------')
-        print(let, nbuf)
-        print('S:', Qstack)
-        print('R:', rets)
-        print('------------')
+
         if not let in ops:
             rets += let
         else:
@@ -659,9 +654,215 @@ def convertToPoland(s:str) -> str:
     return rets[::-1]
 
 
+def decart(s1,s2):
+   return list([[a,b] for a in s1 for b in s2])
+
+def andReplace(s):
+    buf = s.copy()
+    buf2 = list([[i[1], i[0]] for i in s])
+    buf.extend(buf2)
+    return buf
+
+
+def minGraph(g: Graph) -> Graph:
+    nodeList = g.getListOfNodes()
+
+    gTable = g.createTable()
+    
+    index = 0
+    nameOfNodes = {}
+    for noda in nodeList['numeratedNodes']:
+        nameOfNodes[noda] = index
+        index += 1
+
+    marked = []
+    Qstack = []
+
+    nameOfFinishes = []
+    for noda in g.Finish:
+        nameOfFinishes.append(nameOfNodes[noda])
+
+    for noda in nodeList['numeratedNodes']:
+        bufStr = []
+        for noda_in in nodeList['numeratedNodes']:
+            if nameOfNodes[noda] == nameOfNodes[noda_in]:
+                bufStr.append(False)
+            else:
+                if nameOfNodes[noda] in nameOfFinishes:
+                    if nameOfNodes[noda_in] in nameOfFinishes:
+                        bufStr.append(False)
+                    else:
+                        bufStr.append(True)
+                        Qstack.append([nameOfNodes[noda_in], nameOfNodes[noda]])
+                else:
+                    if nameOfNodes[noda_in] in nameOfFinishes:
+                        bufStr.append(True)
+                        Qstack.append([nameOfNodes[noda_in], nameOfNodes[noda]])
+                    else:
+                        bufStr.append(False)
+        marked.append(bufStr)
+
+    #создать дельту
+    delta = []
+
+    terminals = []
+    for t in gTable['annotation']:
+        terminals.append(t)
+    
+    for noda in nodeList['numeratedNodes']:
+
+        bufStr = []
+        for letter in terminals:
+            bufLetter = []
+            for connect in noda.getConnections():
+                if getSymbol(connect) == letter:
+                    bufLetter.append(nameOfNodes[getNoda(connect)])
+            bufStr.append(bufLetter)
+        delta.append(bufStr)
+
+    #обновить marked по delta
+
+    for noda in nodeList['numeratedNodes']:
+        strName = nameOfNodes[noda]
+        for noda_in in nodeList['numeratedNodes']:
+            stlbName = nameOfNodes[noda_in]
+
+            if marked[strName][stlbName] == False:
+                buf = []
+
+                for index in range(len(terminals)):
+                    if delta[strName][index] != [] and delta[stlbName][index] != []:
+                        buf.extend( andReplace(decart(delta[strName][index], delta[stlbName][index])) )
+                
+
+                for elem in buf:
+                    if marked[elem[0]][elem[1]] or marked[elem[1]][elem[0]]:
+                        marked[strName][stlbName] = True
+                        marked[stlbName][strName] = True
+                        break
+
+
+
+    #создать deltaminus
+
+    deltaminus = []
+
+    for noda in nodeList['numeratedNodes']:
+
+        bufStr = []
+        for i in terminals:
+            bufStr.append([])
+        deltaminus.append(bufStr)
+
+    for noda in nodeList['numeratedNodes']:
+        for connect in noda.getConnections():
+            deltaminus[nameOfNodes[getNoda(connect)]][terminals.index(getSymbol(connect))].append(nameOfNodes[noda])
+
+
+    #удалить все из Qstack и обновить marked по deltaminus
+
+    while True:
+        if len(Qstack) != 0:
+            para = Qstack.pop()
+            if marked[para[0]][para[1]] == False or marked[para[1]][para[0]] == False:
+                buf = []
+                for ind_l in range(len(terminals)):
+                    if deltaminus[para[0]][ind_l] != [] and deltaminus[para[1]][ind_l] != []:
+                        buf.extend(andReplace(decart(deltaminus[para[0]][ind_l], deltaminus[para[1]][ind_l])))
+
+                for elem in buf:
+                    if marked[elem[0]][elem[1]] == False or marked[elem[1]][elem[0]] == False:
+                        marked[elem[0]][elem[1]] = True
+                        marked[elem[1]][elem[0]] = True
+                        Qstack.append(elem)
+        else:
+            break
+
+
+    #выбрать компоненты
+
+    components = []
+
+    for stroka in marked:
+        bufTocomp = []
+        for index in range(len(stroka)):
+            if stroka[index] == False:
+                bufTocomp.append(index)
+        if not bufTocomp in components:
+            components.append(bufTocomp)
+    
+    componentsFromNodes = []
+
+    for comp in components:
+        bufTocomp = []
+        for c_in in comp:
+            bufTocomp.append(nodeList['numeratedNodes'][c_in])
+        componentsFromNodes.append(bufTocomp)
+
+    #собрать граф
+    
+    points = []
+
+    mapa = {}
+    for index_comp in range(len(componentsFromNodes)):
+        comp = componentsFromNodes[index_comp]
+        for noda in comp:
+            mapa[noda] = index_comp
+
+    for comp in componentsFromNodes:
+        points.append(Node())
+        
+
+    for index_comp in range(len(componentsFromNodes)):
+        comp = componentsFromNodes[index_comp]
+        for noda in comp:
+            for connect in noda.getConnections():
+                points[index_comp].appendConnection(getSymbol(connect), points[mapa[getNoda(connect)]])
+
+
+
+    retG = Graph(points[0], points[0])
+
+    bufFin = []
+    for index in range(len(components)):
+        comp = components[index]
+        for elem in comp:
+            if elem in nameOfFinishes:
+                if not index in bufFin:
+                    bufFin.append(index)
+
+    f = []
+    for elm in bufFin:
+        f.append(points[elm])
+
+    retG.Finish = f
+
+    mapping = retG.createMap()
+
+    for noda in retG.getListOfNodes()['numeratedNodes']:
+        buf = noda.getConnections()
+        buf1 = []
+        for i in buf:
+            if not i in buf1:
+                buf1.append(i)
+        while True:
+            noda.getConnections().pop()
+            if len(noda.getConnections()) == 0: break
+        for i in buf1:
+            noda.getConnections().append(i)
+        
+                
+    return retG
+
+
+
+kk = [1,2]
+kj = [3,4,5]
+ff = andReplace(decart(kk, kj))
+
 s = convertToPoland('(a|b)*c|d')    
 
-a = ".|ab*|cd"
+a = ".a*|bc"
 
 g = NKAEps(a)
 
@@ -679,6 +880,10 @@ prettyPrint(DKA.createTable())
 
 rerere = DKA.getListOfNodes()
 
-flag = sumulation(DKA, 'accccccccccddddcdcdccdcdc')
+minG = minGraph(DKA)
+
+prettyPrint(minG.createTable())
+
+flag = sumulation(minG, 'bc')
 
 print('all')

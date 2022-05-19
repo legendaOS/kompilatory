@@ -632,6 +632,7 @@ def convertToPoland(s:str) -> str:
                         Qstack.append(let)
                     else:
                         while True:
+                            if len(Qstack) == 0: break
                             top = Qstack[len(Qstack)-1]
                             priortop = prioritet.get(top)
                             priorlet = prioritet.get(let)
@@ -846,8 +847,9 @@ def minGraph(g: Graph) -> Graph:
             if not i in buf1:
                 buf1.append(i)
         while True:
-            noda.getConnections().pop()
             if len(noda.getConnections()) == 0: break
+            noda.getConnections().pop()
+            
         for i in buf1:
             noda.getConnections().append(i)
         
@@ -856,34 +858,34 @@ def minGraph(g: Graph) -> Graph:
 
 
 
-kk = [1,2]
-kj = [3,4,5]
-ff = andReplace(decart(kk, kj))
+# kk = [1,2]
+# kj = [3,4,5]
+# ff = andReplace(decart(kk, kj))
 
-s = convertToPoland('(a|b)*c|d')    
+# s = convertToPoland('(a|b)*c|d')    
 
-a = ".a*|bc"
+# a = ".a*|bc"
 
-g = NKAEps(a)
+# g = NKAEps(a)
 
-prettyPrint(g.createTable())
+# prettyPrint(g.createTable())
 
-NKA(g)
+# NKA(g)
 
-LOF = g.getListOfNodes()
+# LOF = g.getListOfNodes()
 
-prettyPrint(g.createTable())
+# prettyPrint(g.createTable())
 
-DKA = DKA(g)
+# DKA = DKA(g)
 
-prettyPrint(DKA.createTable())
+# prettyPrint(DKA.createTable())
 
-rerere = DKA.getListOfNodes()
+# rerere = DKA.getListOfNodes()
 
-minG = minGraph(DKA)
+# minG = minGraph(DKA)
 
-prettyPrint(minG.createTable())
+# prettyPrint(minG.createTable())
 
-flag = sumulation(minG, 'bc')
+# flag = sumulation(minG, 'bc')
 
-print('all')
+# print('all')

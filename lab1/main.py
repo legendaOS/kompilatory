@@ -45,5 +45,3 @@ while True:
         print('Прошла')
     else:
         print('Не прошла')
-
-    

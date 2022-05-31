@@ -84,7 +84,7 @@ def findEpsGenerating(g: Grammair) -> list:
 from itertools import chain, combinations
 
 def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    # powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
@@ -352,46 +352,109 @@ def deleteUseless(g:Grammair):
     g.Rules = newRules
         
 
-def deleteLeftRecursion(g: Grammair):
+def deleteLeftRecursion(g: Grammair, Ai):
+    """
+        Удаляет непосредственную левую рекурсию из грамматики g для символа Ai
+    """
+
+
     A = g.NonTerminals.copy()
+    index = A.index(Ai)
+
+    B = A[index]
+    A = [B]
 
     toDeleteRules = []
     toAddRules = []
+    toAddNonTerminals = []
 
     RULES = g.Rules.copy()
 
     for i in range(len(A)):
-        for j in range(i):
-            for p in RULES:
-                if getLeft(p)[0] == A[i] and getRight(p)[0] == A[j]:
-                    if not p in toDeleteRules:
-                        toDeleteRules.append(p)
-                    for q in RULES:
-                        if getLeft(q)[0] == A[j]:
-                            xi = getRight(q)
-                            gamma = getRight(p)[1:len(getRight(p))]
-                            mbuf = []
-                            for kkk in xi: mbuf.append(kkk)
-                            for kkk in gamma: mbuf.append(kkk)
-                            if not [[A[i]], mbuf] in toAddRules:
-                                toAddRules.append([[A[i]], mbuf])
-        for rule in RULES:
+
+        # устранить непосредственную левую рекурсию
+
+        flagToRecursionForward = False
+
+        bufToAppendRules = []
+        bufToDeleteRules = []
+
+        newShtrish = A[i] + '`'
+
+
+        for rule in RULES: 
             if getLeft(rule)[0] == A[i]:
-                newSymb = A[i] + '`'
+
                 if getRight(rule)[0] == A[i]:
-                    alpha = getRight(rule)[1: len(getRight(rule))]
-                    toins = []
-                    for lll in alpha: toins.append(lll)
-                    toins.append(newSymb)
-                    if not [[newSymb], toins] in toAddRules:
-                        toAddRules.append([[newSymb], toins])
+                    flagToRecursionForward = True #есть хотябы одно леворекурсивное правило
+
+                    # Собрать правила из A[i] -> A[i]alpha[1]|...|A[i]alpha[n]
+                    # Такого вида: 1) A[i]` -> alpha[1]A[i]`|...|alpha[n]A[i]`
+                    #              2) A[i]` -> alpha[1]|...|alpha[i]
+
+                    if not rule in bufToDeleteRules:
+                        bufToDeleteRules.append(rule)
+
+                    newRuleBuf1 = [[newShtrish]]
+                    newRuleBuf2 = [[newShtrish]]
+
+                    alphaBuf = getRight(rule)[1:len(getRight(rule))]
+
+                    rbuf = []
+                    for lettr in alphaBuf: rbuf.append(lettr)
+
+                    if rbuf != [g.Epsilon]:
+                        rbuf.append(newShtrish)
+                        newRuleBuf1.append(rbuf)
+                        newRuleBuf2.append(alphaBuf)
+                        if not newRuleBuf1 in bufToAppendRules:
+                            bufToAppendRules.append(newRuleBuf1)
+                        if not newRuleBuf2 in bufToAppendRules:
+                            bufToAppendRules.append(newRuleBuf2)
+
                 else:
-                    betta = getRight(rule)
-                    toins = []
-                    for lll in betta: toins.append(lll)
-                    toins.append(newSymb)
-                    if not [[A[i]], toins] in toAddRules:
-                        toAddRules.append([[A[i]], toins])
+
+                    # собрать правила из A[i] -> betta[1]|...|betta[m]
+                    # Вида 1) A[i] -> betta[1]A[i]`|...|betta[m]A[i]`
+                    #      2) A[i] -> betta[1]|...|betta[m]
+
+                    if not rule in bufToDeleteRules:
+                        bufToDeleteRules.append(rule)
+
+                    newRuleBuf1 = [[A[i]]]
+                    newRuleBuf2 = [[A[i]]]
+
+                    bettaBuf = getRight(rule)
+
+                    rbuf = []
+                    for lettr in bettaBuf: rbuf.append(lettr)
+                    rbuf.append(newShtrish)
+
+                    newRuleBuf1.append(rbuf)
+                    newRuleBuf2.append(bettaBuf)
+
+                    if not newRuleBuf1 in bufToAppendRules:
+                            bufToAppendRules.append(newRuleBuf1)
+                    if not newRuleBuf2 in bufToAppendRules:
+                        bufToAppendRules.append(newRuleBuf2)
+                    
+        # добавим правила если была хоть одна леворекурсивная продукция
+
+        if flagToRecursionForward:
+            #добавим новый нетерминал 
+            toAddNonTerminals.append(newShtrish)
+
+            for microRule in bufToAppendRules:
+                if not microRule in toAddRules:
+                    toAddRules.append(microRule)
+            
+            for microRule in bufToDeleteRules:
+                if not microRule in toDeleteRules:
+                    toDeleteRules.append(microRule)
+
+
+            
+                
 
     newRules = []
     for rule in g.Rules:
@@ -403,6 +466,69 @@ def deleteLeftRecursion(g: Grammair):
             newRules.append(rule)
 
     g.Rules = newRules
+
+    for newNonTermMicro in toAddNonTerminals:
+        g.NonTerminals.append(newNonTermMicro)
+
+
+
+
+def deleteAllLeftRecursion(g: Grammair):
+    """
+        Устраняет произвольную левую рекурсию из грамматики g
+    """
+
+    A = g.NonTerminals.copy()
+
+    for i in range(len(A)):
+
+        toDeleteRules = []
+        toAddRules = []
+
+        for j in range(i):
+            
+            for rule in g.Rules:
+                # Для каждого правила вида A[i] -> A[j]gamma
+                # Удалить такое правило
+
+                if getLeft(rule)[0] == A[i] and getRight(rule)[0] == A[j]:
+                    if not rule in toDeleteRules:
+                        toDeleteRules.append(rule)
+
+                bufGamma = []
+                r = getRight(rule)[1: len(getRight(rule))]
+                for lettr in r:
+                    bufGamma.append(lettr)
+
+                # Для каждого праивла вида Q -> x[i] из правил вида A[j] -> delta[i]
+                # Добавть правило вида A[i] -> x[i]gamma
+
+                for microRule in g.Rules:
+                    if getLeft(microRule)[0] == A[j]:
+                        bufDelta = getRight(microRule)
+                        bufToNewRule = bufDelta.copy()
+                        for lettr in bufGamma:
+                            bufToNewRule.append(lettr)
+
+
+                        if not [[A[i]], bufToNewRule] in toAddRules:
+                            toAddRules.append([[A[i]], bufToNewRule])
+
+            # Добавить и удалить полученные правила
+                new_Rules = []
+                for microRule in g.Rules:
+                    if not microRule in toDeleteRules:
+                        new_Rules.append(microRule)
+
+                for microRule in toAddRules:
+                    if not microRule in new_Rules:
+                        new_Rules.append(microRule)
+
+            # Устранить непосредственную левую рекурсию для символа A[i]
+            deleteLeftRecursion(g, A[i])
+                        
+
+
 
 
 
@@ -426,13 +552,14 @@ def getRight(rule: list) -> list:
 
 g = Grammair()
 
-t = 'a,b'.split(',')
+t = 'a,b,y'.split(',')
 n = 'A,S'.split(',')
 s = 'S'
 r = [
-    [['A'], ['S','A']],
-    [['A'], ['A','a']],
-    [['S'], ['A','b']]
+    [['A'], ['S','a']],
+    [['S'], ['S','b']],
+    [['S'], ['A','y']],
+    [['S'], ['b']]
 ]
 
 
@@ -444,11 +571,5 @@ fillGrammair(g, t, n, s, r)
 print(g)
 print('---------------------------')
 
-deleteLeftRecursion(g)
-
+deleteAllLeftRecursion(g)
 print(g)
-
-
-
-
-

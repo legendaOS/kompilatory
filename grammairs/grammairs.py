@@ -550,26 +550,26 @@ def getRight(rule: list) -> list:
 
 
 
-g = Grammair()
+# g = Grammair()
 
-t = 'a,b,y'.split(',')
-n = 'A,S'.split(',')
-s = 'S'
-r = [
-    [['A'], ['S','a']],
-    [['S'], ['S','b']],
-    [['S'], ['A','y']],
-    [['S'], ['b']]
-]
-
-
+# t = 'a,b,y'.split(',')
+# n = 'A,S'.split(',')
+# s = 'S'
+# r = [
+#     [['A'], ['S','a']],
+#     [['S'], ['S','b']],
+#     [['S'], ['A','y']],
+#     [['S'], ['b']]
+# ]
 
 
 
-fillGrammair(g, t, n, s, r)
 
-print(g)
-print('---------------------------')
 
-deleteAllLeftRecursion(g)
-print(g)
+# fillGrammair(g, t, n, s, r)
+
+# print(g)
+# print('---------------------------')
+
+# deleteAllLeftRecursion(g)
+# print(g)

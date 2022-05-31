@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar name="G0">
+    <terminalsymbols>
+        <term name="IDENT" spell="a" />
+        <term name="ADD" spell="+" />
+        <term name="MUL" spell="*" />
+        <term name="LPAREN" spell="(" />
+        <term name="RPAREN" spell=")" />
+    </terminalsymbols>
+    <nonterminalsymbols>
+        <nonterm name="E" />
+        <nonterm name="T" />
+        <nonterm name="F" />
+    </nonterminalsymbols>
+    <productions>
+        <production>
+            <lhs name="E" />
+            <rhs>
+                <symbol type="nonterm" name="E" />
+                <symbol type="term" name="ADD" />
+                <symbol type="nonterm" name="T" />
+            </rhs>
+        </production>
+        <production>
+            <lhs name="E" />
+            <rhs>
+                <symbol type="nonterm" name="T" />
+            </rhs>
+            </production>
+        <production>
+            <lhs name="T" />
+            <rhs>
+                <symbol type="nonterm" name="T" />
+                <symbol type="term" name="MUL" />
+                <symbol type="nonterm" name="F" />
+            </rhs>
+            </production>
+        <production>
+            <lhs name="T" />
+            <rhs>
+                <symbol type="nonterm" name="F" />
+            </rhs>
+            </production>
+        <production>
+            <lhs name="F" />
+            <rhs>
+                <symbol type="term" name="IDENT" />
+            </rhs>
+            </production>
+        <production>
+            <lhs name="F" />
+            <rhs>
+                <symbol type="term" name="LPAREN" />
+                <symbol type="nonterm" name="E" />
+                <symbol type="term" name="RPAREN" />
+            </rhs>
+        </production>
+    </productions>
+    <startsymbol name="E" />
+</grammar>

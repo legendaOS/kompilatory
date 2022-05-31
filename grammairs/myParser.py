@@ -2,7 +2,7 @@ from grammairs import Grammair, fillGrammair
 from bs4 import BeautifulSoup as Soup
 
 
-class Parcer:
+class Parser:
     def __init__(self) -> None:
         pass
 
@@ -80,7 +80,7 @@ class Parcer:
         return({'Grammair': g, 'Header': header})
 
 
-# p = Parcer()
+# p = Parser()
 # Bufer = p.INView('G0.xml')
 # print(Bufer['Grammair'])
 

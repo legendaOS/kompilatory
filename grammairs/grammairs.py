@@ -478,6 +478,10 @@ def deleteAllLeftRecursion(g: Grammair):
         Устраняет произвольную левую рекурсию из грамматики g
     """
 
+    #избавиться от e переходов
+
+    deleteEpsGenerating(g)
+
     A = g.NonTerminals.copy()
 
     for i in range(len(A)):
@@ -485,15 +489,19 @@ def deleteAllLeftRecursion(g: Grammair):
         toDeleteRules = []
         toAddRules = []
 
-        for j in range(i):
-            
+
+        for j in range(i+1):
+
             for rule in g.Rules:
                 # Для каждого правила вида A[i] -> A[j]gamma
                 # Удалить такое правило
 
+
                 if getLeft(rule)[0] == A[i] and getRight(rule)[0] == A[j]:
                     if not rule in toDeleteRules:
                         toDeleteRules.append(rule)
+
+
 
                 bufGamma = []
                 r = getRight(rule)[1: len(getRight(rule))]
@@ -533,6 +541,7 @@ def deleteAllLeftRecursion(g: Grammair):
 
 
 
+
 def fillGrammair(G: Grammair, Terms: list, NonTerms: list, Start: str, Rules: list) -> None:
     for letter in Terms:
         G.setTerminal(letter)
@@ -552,14 +561,16 @@ def getRight(rule: list) -> list:
 
 # g = Grammair()
 
-# t = 'a,b,y'.split(',')
-# n = 'A,S'.split(',')
-# s = 'S'
+# t = 'a,+,*,(,)'.split(',')
+# n = 'E,T,F'.split(',')
+# s = 'E'
 # r = [
-#     [['A'], ['S','a']],
-#     [['S'], ['S','b']],
-#     [['S'], ['A','y']],
-#     [['S'], ['b']]
+#     [['E'], ['E', '+', 'T']],
+#     [['E'], ['T']],
+#     [['T'], ['T', '*', 'F']],
+#     [['T'], ['F']],
+#     [['F'], ['a']],
+#     [['F'], ['(', 'E', ')']],
 # ]
 
 

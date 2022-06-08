@@ -55,6 +55,15 @@
                 <symbol type="term" name="RPAREN" />
             </rhs>
         </production>
+        <production>
+            <lhs name="F" />
+            <rhs>
+
+                <symbol type="nonterm" name="F" />
+                <symbol type="nonterm" name="F" />
+
+            </rhs>
+        </production>
     </productions>
     <startsymbol name="E" />
 </grammar>

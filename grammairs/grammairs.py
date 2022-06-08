@@ -34,10 +34,24 @@ class Grammair:
             for letter in rule[0]:
                 left += letter
             for letter in rule[1]:
-                right += letter
+                right += f'<{letter}>' 
             strbuf = f' {left} -> {right}'
             buf += strbuf + '\n'
         return buf
+
+    def convertToDict(self):
+        retDict = {}
+
+        for rule in self.Rules:
+            leftSide = getLeft(rule)[0]
+            rightSide = getRight(rule)
+
+            if retDict.get(leftSide):
+                retDict[leftSide].append(rightSide)
+            else:
+                retDict[leftSide] = [rightSide]
+
+        return retDict
 
 
 

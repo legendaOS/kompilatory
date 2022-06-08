@@ -1,3 +1,4 @@
+from itertools import count
 from grammairs import *
 import pptree 
 
@@ -90,16 +91,15 @@ def Rstr(BufferRoot):
     if not BufferRoot in ret: ret.append(BufferRoot)
     return ret
 
-def Rs(root):
+def Rs(root: ATLNode, g:Grammair):
     """
     Вернет все терминалы в дереве слева направо
     """
     buf = Rstr(root)
     ret = []
     for i in buf:
-        if i.TypeElement == 'T':
+        if i.Letter in g.Terminals:
             ret.append(i.Letter)
-
     return ret
 
 
@@ -148,7 +148,9 @@ def killChildrens(CLeft: ATLNode):
     CLeft.Childrens = []
     CLeft.Status = 'process'
 
-def goPrevious(CLeft: ATLNode, CLeftStack, CGMAP):
+def goPrevious(CLeft: ATLNode, CLeftStack, ind):
+
+    counter = 0
 
     #если в списке разбираемых нод есть еще кто-то
     #обновить списокдоступных правил для текущей ноды
@@ -158,43 +160,66 @@ def goPrevious(CLeft: ATLNode, CLeftStack, CGMAP):
     #если правил нет, то убить ее детей, обновить список доступных правил и отправиться дальше назад
     #если позадди никого нет,то это конец разбора, вернуть none
 
-    killChildrens(CLeft)
-    FillRules(CLeft, CGMAP)
-    CLeftStack.pop()
+    # killChildrens(CLeft)
+    # FillRules(CLeft, CGMAP)
+    # CLeftStack.pop()
 
-    while True:
-        if len(CLeftStack) > 0:
-            CLeft = CLeftStack.pop()
-            1+1
-            if len(CLeft.Rules) > 0:
-                killChildrens(CLeft)
+    # while True:
+        
+    #     if len(CLeftStack) > 0:
+    #         counter += 1
+    #         CLeft = CLeftStack.pop()
+    #         1+1
 
-                return CLeft
+    #         if len(CLeft.Rules) > 0:
+    #             killChildrens(CLeft)
+    #             print('удалено вершин', counter)
+    #             return [CLeft, counter]
 
-            else:
-                killChildrens(CLeft)
-                FillRules(CLeft, CGMAP)
-                1+1
-        else:
-            return None
+    #         else:
+    #             killChildrens(CLeft)
+    #             FillRules(CLeft, CGMAP)
+    #             1+1
+    #     else:
+    #         return None
+
+    #откатиться до разбираемого элемента с номером ind
     
 
 def countCoincidence(ctokens, Rstokens):
+
+    myTokens = Rstokens.copy()
+
     count = 0
-    if len(Rstokens) == 0:
+
+    if len(myTokens) == 0:
         return count
 
-    now = Rstokens.pop()
+    now = myTokens.pop(0)
     
+    # for lettr in ctokens:
+
+    #     if lettr == now:
+    #         count += 1
+    #         if len(myTokens) == 0:
+    #             return count
+    #         else:
+    #             now = myTokens.pop(0)
+
+
     for lettr in ctokens:
-        if lettr == now:
+        if now == lettr:
             count += 1
-            if len(Rstokens) == 0:
+            if len(myTokens) == 0:
                 return count
             else:
-                now = Rstokens.pop()
+                now = myTokens.pop(0)
+        else:
+            return count
         
 
+    return count
+        
 
 
 
@@ -215,27 +240,31 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
 
     while True:
 
-        RS = Rs(ROOT)
+        RScount = countCoincidence(tokens, Rs(ROOT, g))
 
         if debug:
             print()
             retTree.printTree(flag=True, Current=Left)
             print()
-            print('tokens', tokens)
-            print('tokens to ind', tokens[0: ind])
-            print('RS', RS)
-            lols = ''
-            lollen = 0
-            for loli in Rstr(ROOT): 
-                lols += f'<{loli.Letter}>'
-                lollen += 1
-            print(lols, lollen)
+            print('RScount', RScount, 'ind', ind)
+            
+            # print('RScount', RScount, 'ind', ind)
+            
+            print(Rs(ROOT, g))
+            print(tokens)
 
-        bufRSlen = len(RS)
+            # lols = ''
+            # lollen = 0
+            # for loli in Rstr(ROOT): 
+            #     lols += f'<{loli.Letter}>'
+            #     lollen += 1
+            # print(lols, lollen)
 
-        if bufRSlen > ind:
-            ind += 1
-            continue
+        bufRSlen = len(Rs(ROOT, g))
+
+        # if bufRSlen > ind:
+        #     ind += 1
+        #     continue
 
         if bufRSlen > len(tokens):
             #длина разбора больше 
@@ -254,19 +283,23 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                 # убить его детей и дропнуть верхнее правило
                 killChildrens(Left)
                 FillRules(Left, GMAP)
-                Left = goPrevious(Left, LeftStack, GMAP)
+                bufferPrevious = goPrevious(Left, LeftStack, GMAP)
+                Left = bufferPrevious[0]
+                ind -= bufferPrevious[1]
+                if ind < 1:
+                    ind = 1
                 if Left == None:
                     return None
     
 
-        RS = RS[0: ind] 
-        confirmed = tokens[0: ind]
+        # RS = RS[0: ind] 
+        # confirmed = tokens[0: ind]
 
-        if RS == confirmed:
-            1+1
+        # if RS == confirmed:
+        #     1+1
 
         #разбор несошелся
-        if RS != confirmed or processFlag:
+        if ( RScount < ind and RScount != len(tokens) ) or processFlag:
             processFlag = False
 
             #если можно разобрать текущю вершину
@@ -277,7 +310,8 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                 Left.Status = 'ready'
 
                 #смотрим дальше
-                ind = 1
+                # if ind != 1:
+                #     ind -= 1
                 continue
 
             #если текущая вершина уже разобрана
@@ -292,7 +326,8 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                     Left = Left.Childrens[0]
 
                     #смотрим дальше 
-                    ind = 1
+                    # if ind != 1:
+                    #     ind -= 1
                     continue
 
                 #нет левого ребенка для разбора 
@@ -309,13 +344,18 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                         1+1
                     else:
                         # парвил нет, переходим на предыдущее правило которое можно исправить
-                        Left = goPrevious(Left, LeftStack, GMAP)
+                        bufferPrevious = goPrevious(Left, LeftStack, GMAP)
+                        Left = bufferPrevious[0]
+                        ind -= bufferPrevious[1]
+                        if ind < 1:
+                            ind = 1
                         1+1
                     if Left == None: # если перейти неудалось то все
                         return None
 
                     #идем дальше 
-                    ind = 1
+                    # if ind != 1:
+                    #     ind -= 1
                     continue
 
         else:
@@ -340,14 +380,16 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                 #Если есть неразобранный нетерминал, то падаем в обратно в разбор
                 else:
                     processFlag = True
-                    ind = 1
+                    
 
             #продолжить разбор
 
             if not Left in LeftStack:
                 LeftStack.append(Left)
 
-            Left = nextLeft(ROOT, Left) 
+            if RScount >= ind - 1:
+                Left = nextLeft(ROOT, Left) 
+
             continue
 
 
@@ -387,7 +429,7 @@ def createATLbyLL(g: Grammair, tokens: list, debug = False) -> ATLTree:
         # if not GMAP == GMAPold:
         #     GMAP = g.convertToDict()
 
-        RS = Rs(ROOT)
+        RS = Rs(ROOT, g)
 
         if debug:
             retTree.printTree(flag=True, Current=Left)

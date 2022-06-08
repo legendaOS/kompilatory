@@ -66,7 +66,10 @@ print(g)
 from ATLcreate import *
 
 
-tokens1 = '( var + var )'.split(' ')
+tokens1 = '( var + var ) + var'.split(' ')
+micrololRS = ['(', 'var', '+', 'var', ')', '+']
+
+ttttttttt = countCoincidence(tokens1, micrololRS)
 
 MyTree1 = LLRecursion(g, tokens1, True)
 

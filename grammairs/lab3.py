@@ -1,4 +1,3 @@
-from lib2to3.pgen2 import token
 from grammairs import *
 
 # запишем грамматику G2 и присваивание в стиле Паскаля во внутреннее представление
@@ -66,10 +65,7 @@ print(g)
 from ATLcreate import *
 
 
-tokens1 = '( var + var ) + var'.split(' ')
-micrololRS = ['(', 'var', '+', 'var', ')', '+']
-
-ttttttttt = countCoincidence(tokens1, micrololRS)
+tokens1 = 'var * var * var'.split(' ')
 
 MyTree1 = LLRecursion(g, tokens1, True)
 

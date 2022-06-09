@@ -170,8 +170,14 @@ def goPrevious(CLeft: ATLNode, CLeftStack, CGMAP, CRoot):
     #если правил нет, то убить ее детей, обновить список доступных правил и отправиться дальше назад
     #если позадди никого нет,то это конец разбора, вернуть none
 
+    
 
     Papa = FindFather(CLeft, CRoot)
+
+    if Papa == None:
+        return None
+
+
     Papa.Childrens = []
     Papa.Status = 'process'
 
@@ -309,6 +315,7 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                 killChildrens(Left)
                 FillRules(Left, GMAP)
                 Left = goPrevious(Left, LeftStack, GMAP, ROOT)
+                if Left == None: return None
                 ind = Left.CurInd
     
 
@@ -357,6 +364,7 @@ def LLRecursion(g:Grammair, tokens, debug = False) -> ATLTree:
                     else:
                         # парвил нет, переходим на предыдущее правило которое можно исправить
                         Left = goPrevious(Left, LeftStack, GMAP, ROOT)
+                        if Left == None: return None
                         ind = Left.CurInd
                         1+1
                     if Left == None: # если перейти неудалось то все

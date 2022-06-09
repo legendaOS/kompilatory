@@ -103,7 +103,7 @@ from ATLcreate import *
 
 tokens1 = 'begin const = var + var ; const == ( var * var ) - const end'.split(' ')
 
-MyTree1 = LLRecursion(g, tokens1, debug=True)
+MyTree1 = LLRecursion(g, tokens1, debug=False)
 
 
 print('Дерево по токенам', tokens1)

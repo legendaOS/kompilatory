@@ -174,12 +174,10 @@ def goPrevious(CLeft: ATLNode, CLeftStack, CGMAP, CRoot):
 
     Papa = FindFather(CLeft, CRoot)
 
-    if Papa == None:
-        return None
+    # if Papa == None:
+    #     return None
 
-
-    Papa.Childrens = []
-    Papa.Status = 'process'
+    
 
     killChildrens(CLeft)
     FillRules(CLeft, CGMAP)
@@ -201,12 +199,13 @@ def goPrevious(CLeft: ATLNode, CLeftStack, CGMAP, CRoot):
             if len(CLeft.Rules) > 0:
                 killChildrens(CLeft)
 
+                if not CLeft in Rstr(Papa) or CLeft == Papa:
+                    Papa.Childrens = []
+                    Papa.Status = 'process'
+
                 return CLeft
 
-            # else:
-            #     killChildrens(CLeft)
-            #     FillRules(CLeft, CGMAP)
-            #     1+1
+
         else:
             return None
 

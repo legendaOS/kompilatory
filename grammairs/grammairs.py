@@ -21,11 +21,21 @@ class Grammair:
     def __str__(self) -> str:
         buf = ''
         buf += 'Terminals:\n'
+        c = 0
         for letter in self.Terminals:
             buf += ' ' + letter
+            c += 1
+            if c == 10: 
+                buf += '\n'
+                c = 0
         buf += '\nNonterminals:\n'
+        c = 0
         for letter in self.NonTerminals:
             buf += ' ' + letter
+            c += 1
+            if c == 10: 
+                buf += '\n'
+                c = 0
         buf += f'\nStart: {self.Start}\n'
         buf += 'Rules:\n'
         for rule in self.Rules:

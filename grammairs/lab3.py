@@ -101,7 +101,7 @@ print(g)
 from ATLcreate import *
 
 
-tokens1 = 'begin const = var + var ; const == ( var * var ) - const end'.split(' ')
+tokens1 = 'begin const = var ; var = var + var ; var = const <= var end'.split(' ')
 
 MyTree1 = LLRecursion(g, tokens1, debug=False)
 

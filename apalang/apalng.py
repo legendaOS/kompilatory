@@ -5,6 +5,8 @@ from grammairs import Grammair, fillGrammair
 
 if __name__ == '__main__':
 
+    TOFILETO = sys.argv[2]
+    FROMFILETO = sys.argv[1]
 
     apalang = Grammair()
 
@@ -282,7 +284,7 @@ if __name__ == '__main__':
             apalang.setTerminal(letter)
 
 
-    ftog = open('C:/Users/grvla/Desktop/jyputer/kompilatory/grammairs/GRAMMAIR.txt', 'w')
+    ftog = open('GRAMMAIR.txt', 'w')
     ftog.write(str(apalang))
 
     ftog.close()
@@ -293,7 +295,7 @@ if __name__ == '__main__':
 
     from mytokenizator import GetTokensByFile
 
-    tokens = GetTokensByFile('C:/Users/grvla/Desktop/jyputer/kompilatory/grammairs/mytest.ap', ReservedSymbols)
+    tokens = GetTokensByFile(FROMFILETO, ReservedSymbols)
 
     if not tokens:
         raise Exception('Ошибка синтаксиса')
@@ -412,8 +414,8 @@ if __name__ == '__main__':
 
     convertedList = convertToJS(myTree)
 
-    jsText = "async function add(obj, l){ l.push(obj) };  async function getl(obj, l) { return l[obj] };  const readline = require('readline');  const rl = readline.createInterface({   input: process.stdin,   output: process.stdout }); const ВВОД = async () =>{for await (const line of rl) { return line} };  async function ВЫВОД (obj) { console.log(obj) } ;"
-
+    #jsText = "async function add(obj, l){ l.push(obj) };  async function getl(obj, l) { return l[obj] };  const readline = require('readline');  const rl = readline.createInterface({   input: process.stdin,   output: process.stdout }); const ВВОД = async () =>{for await (const line of rl) { return line} };  async function ВЫВОД (obj) { console.log(obj) } ;"
+    jsText = "function add(obj, l){ l.push(obj) }; function getl(obj, l){ return l[obj] }; ВВОД =  () =>{ buf = prompt(); return buf}; function ВЫВОД (obj) { alert(obj) } ;"
 
     for funct in convertedList[1]:
         jsText += funct
@@ -422,17 +424,23 @@ if __name__ == '__main__':
 
     1+1
 
+    htmlText = f'<!DOCTYPE html><html><head></head><body><script>{jsText}</script></body></html>'
 
+    f = open('index.html', 'w', encoding='utf-8')
 
-    f = open('C:/Users/grvla/Desktop/jyputer/kompilatory/grammairs/main.js', 'w', encoding='utf-8')
-
-    f.write(jsText)
+    f.write(htmlText)
 
     f.close()
 
-
     import os
 
-    os.system('node C:/Users/grvla/Desktop/jyputer/kompilatory/grammairs/main.js')
+    patchToHtmlFile = os.path.abspath("index.html")
 
-    input()
+
+    f = open(TOFILETO, 'w')
+
+    batText = f'start "C:\Program Files\Google\Chrome\Application\chrome.exe" {patchToHtmlFile}'
+
+    f.write(batText)
+
+    f.close()
